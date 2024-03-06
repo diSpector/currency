@@ -1,0 +1,18 @@
+syntax = "proto3";
+package currency;
+
+option go_package = "pkg/currency/grpc";
+
+service CurrencyApi {
+    rpc GetCurrency(CurrencyRequest) returns (stream CurrencyResponse);
+}
+
+message CurrencyRequest {
+    repeated string Name = 1; 
+}
+
+message CurrencyResponse {
+    string Name = 1;
+    string Code = 2;
+    double Rate = 3;
+}
