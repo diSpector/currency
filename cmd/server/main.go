@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
+	"time"
 
 	"github.com/diSpector/currency.git/internal/currency/server"
+	"github.com/diSpector/currency.git/internal/currency/server/cache"
 	"github.com/diSpector/currency.git/internal/currency/server/usecase"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 
 	pb "github.com/diSpector/currency.git/pkg/currency/grpc"
@@ -17,7 +21,23 @@ const PORT = `50060`
 func main() {
 	log.Println(`server run`)
 
-	curUseCase := usecase.New(API_URL)
+	innerCache := cache.NewInnerCache()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: `localhost:6379`,
+	})
+
+	_, err := redisClient.Ping(context.Background()).Result()
+	if err != nil {
+		log.Fatalln(`err ping Redis:`, err)
+	}
+	defer redisClient.Close()
+
+	redisCache := cache.NewRedisCache(redisClient, 2 * time.Minute)
+	
+	multiLayerCache := cache.NewMultiLayerCache(innerCache, redisCache)
+
+	curUseCase := usecase.New(API_URL, multiLayerCache)
 
 	serv := server.NewServer(curUseCase)
 

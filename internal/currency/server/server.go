@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"time"
 
 	"github.com/diSpector/currency.git/internal/currency/server/usecase"
@@ -20,6 +21,11 @@ func NewServer(use usecase.CurrencyUseCase) *Server {
 }
 
 func (s *Server) GetCurrency(req *pb.CurrencyRequest, stream pb.CurrencyApi_GetCurrencyServer) error {
+	mark := time.Now()
+	defer func(){
+		log.Println(`request processing time:`, time.Since(mark))
+	}()
+
 	cursCh, errCh := s.use.GetCurrenciesByCodes(req.Name)
 
 	for {
